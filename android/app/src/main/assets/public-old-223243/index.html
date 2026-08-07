@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>Cubex Run</title>
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%236fa83a'/><rect x='3' y='5' width='2' height='2' fill='%23fff'/><rect x='11' y='5' width='2' height='2' fill='%23fff'/><rect x='3' y='5' width='1' height='1' fill='%23000'/><rect x='11' y='5' width='1' height='1' fill='%23000'/></svg>" />
+<script type="importmap">
+{ "imports": { "three": "./assets/vendor/three.module.min.js" } }
+</script>
+<link rel="modulepreload" href="assets/vendor/three.module.min.js?v=21">
+<link rel="modulepreload" href="js/main.js?v=21">
+<link rel="modulepreload" href="js/lobby-mascot.js?v=21">
+<link rel="modulepreload" href="js/game.js?v=21">
+<style>
+  @font-face {
+    font-family: "Fredoka";
+    src: url("assets/fonts/fredoka-latin.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: radial-gradient(120% 120% at 50% 0%, #11161d 0%, #050608 55%, #020304 100%);
+    color: #e8eaed;
+    font-family: "Fredoka", "Segoe UI", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  body {
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* El #wrap llena toda la pantalla. El aspect ratio del juego se
+     ajusta dinámicamente al canvas via la cámara ortográfica (ver
+     js/renderer.js -> resize()). Sin barras negras, sin letterbox. */
+  #wrap {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    overflow: hidden;
+  }
+  canvas#game {
+    background: #050608;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* ============================================================
+     HUD — central circular timer, glass chips, no chunky borders
+     ============================================================ */
+  .hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    font-family: "Fredoka", sans-serif;
+  }
+  /* top-left cluster: level + best stacked */
+  .hud-cluster {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    left: calc(env(safe-area-inset-left, 0px) + 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+  }
+  .chip {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 14px 7px;
+    background: rgba(8, 12, 18, 0.5);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-radius: 999px;
+    min-height: 30px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  .chip-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+  }
+  .chip-level .chip-num { color: #ffd24a; text-shadow: 0 0 14px rgba(255, 210, 74, 0.45); }
+  .chip-best  .chip-num { color: #ffe07a; }
+  .chip.bump .chip-num { animation: bestBump 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes bestBump {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.5); color: #fff8aa; text-shadow: 0 0 14px #ffd24a; }
+    100% { transform: scale(1); }
+  }
+  /* top-center: HERO circular timer */
+  .hud-timer {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 108px;
+    height: 108px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .timer-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.4));
+  }
+  .ring-track {
+    fill: rgba(8, 12, 18, 0.55);
+    stroke: rgba(255, 255, 255, 0.07);
+    stroke-width: 1.5;
+  }
+  .ring-progress {
+    fill: none;
+    stroke: url(#ringGrad);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 289.03;
+    stroke-dashoffset: 289.03;
+    transition: stroke-dashoffset 0.18s linear, stroke 0.25s;
+  }
+  .hud-timer.danger    .ring-progress { stroke: #ff7a3a; }
+  .hud-timer.critical  .ring-progress {
+    stroke: #ff3a3a;
+    animation: ringPulse 0.55s ease-in-out infinite alternate;
+  }
+  @keyframes ringPulse {
+    from { stroke-width: 4;  filter: drop-shadow(0 0 0  rgba(255, 58, 58, 0)); }
+    to   { stroke-width: 6;  filter: drop-shadow(0 0 14px rgba(255, 58, 58, 0.75)); }
+  }
+  .timer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .timer-time {
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+    transition: color 0.2s;
+  }
+  .timer-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .hud-timer.danger   .timer-time { color: #ffb89a; }
+  .hud-timer.critical .timer-time {
+    color: #fff;
+    animation: timePulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes timePulse {
+    from { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65); }
+    to   { transform: scale(1.06); text-shadow: 0 0 18px rgba(255, 80, 80, 0.8); }
+  }
+  /* top-right: single circular icon button (restart) */
+  .hud-iconbtn {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 18px);
+    right: calc(env(safe-area-inset-right, 0px) + 16px);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(8, 12, 18, 0.5);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    color: #ffd24a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.1s ease-out, background 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hud-iconbtn svg { width: 22px; height: 22px; fill: currentColor; }
+  .hud-iconbtn:active { transform: scale(0.9); background: rgba(28, 22, 8, 0.7); }
+  /* bottom: progress + slime distance */
+  .hud-bottom {
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+    left: calc(env(safe-area-inset-left, 0px) + 16px);
+    right: calc(env(safe-area-inset-right, 0px) + 16px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .slime-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(8, 12, 18, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #6fa83a;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    min-width: 56px;
+    justify-content: center;
+    transition: color 0.2s, background 0.2s, transform 0.2s;
+  }
+  .slime-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .slime-badge.warn     { color: #ffb84a; }
+  .slime-badge.danger   { color: #ff8a3a; animation: slimePulse 0.6s ease-in-out infinite alternate; }
+  .slime-badge.critical {
+    color: #ff3a3a;
+    background: rgba(70, 14, 14, 0.7);
+    animation: slimePulse 0.4s ease-in-out infinite alternate;
+  }
+  @keyframes slimePulse {
+    from { transform: scale(1);    }
+    to   { transform: scale(1.1);  }
+  }
+  .exit-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(8, 12, 18, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(0, 0, 0, 0.5);
+  }
+  .exit-fill {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    background: linear-gradient(90deg, #6fa83a 0%, #b8e36a 60%, #ffd24a 100%);
+    border-radius: 999px;
+    box-shadow: 0 0 12px rgba(111, 168, 58, 0.65);
+    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .exit-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+  }
+  .overlay {
+    position: absolute; inset: 0;
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    background: rgba(0, 0, 0, 0.78);
+    z-index: 10;
+  }
+  .overlay.show { display: flex; }
+  .overlay h1 { margin: 0; font-size: 40px; letter-spacing: 0.05em; }
+  .overlay.win  h1 { color: #6fa83a; }
+  .overlay.lose h1 { color: #e84545; }
+  .overlay.paused h1 { color: #ffd24a; }
+  .overlay p  { margin: 0; font-size: 14px; color: #b0b8c5; max-width: 320px; text-align: center; }
+  .overlay .hint { font-size: 11px; color: #6a7a8a; margin-top: 14px; opacity: 0.85; }
+  .overlay .btn { font-size: 14px; padding: 10px 18px; }
+  .overlay .btn + .btn { margin-left: 8px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn.secondary { background: #2a3038; }
+  .btn.secondary:hover { background: #3a4048; }
+  .stat {
+    display: flex; gap: 18px;
+    font-size: 12px; color: #b0b8c5;
+    padding: 8px 0;
+  }
+  .stat span b { color: #ffd24a; font-weight: 600; }
+  /* === BOTONES OVERLAY (lose/win/pause) === */
+  .btn {
+    pointer-events: auto;
+    background: linear-gradient(135deg, #ffd24a 0%, #e8b124 100%);
+    color: #2a1a00;
+    border: 2px solid #8b5d00;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: "Fredoka", sans-serif;
+    box-shadow:
+      0 4px 0 #8b5d00,
+      0 8px 18px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: transform 0.08s ease-out, box-shadow 0.08s, background 0.1s;
+  }
+  .btn:hover  { background: linear-gradient(135deg, #ffe07a 0%, #f0c020 100%); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #8b5d00, 0 4px 10px rgba(0, 0, 0, 0.25); }
+  .btn.secondary { background: #2a3038; color: #e8eaed; border-color: #1a2028; box-shadow: 0 4px 0 #1a2028, 0 8px 18px rgba(0, 0, 0, 0.3); }
+  .btn.secondary:hover  { background: #3a4048; }
+  .btn.secondary:active { transform: translateY(2px); box-shadow: 0 2px 0 #1a2028; }
+  canvas#game.shake { animation: shake 0.12s linear infinite; }
+  @keyframes shake {
+    0%   { transform: translate(0, 0); }
+    20%  { transform: translate(-2px, 1px); }
+    40%  { transform: translate(2px, -1px); }
+    60%  { transform: translate(-1px, -2px); }
+    80%  { transform: translate(1px, 2px); }
+    100% { transform: translate(0, 0); }
+  }
+
+  /* LOBBY — portada arcade a pantalla completa */
+  .lobby {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    overflow: hidden;
+    isolation: isolate;
+    color: #f6f5df;
+    background:
+      radial-gradient(80% 62% at 50% 40%, rgba(112, 161, 58, 0.26), transparent 70%),
+      linear-gradient(180deg, #172317 0%, #0c1710 48%, #050b08 100%);
+  }
+  .lobby::before {
+    content: '';
+    position: absolute;
+    inset: -12%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 20%, rgba(255, 220, 105, 0.36) 0 2px, transparent 3px),
+      radial-gradient(circle at 76% 15%, rgba(139, 192, 82, 0.3) 0 2px, transparent 3px),
+      radial-gradient(circle at 84% 58%, rgba(96, 176, 225, 0.26) 0 2px, transparent 3px),
+      radial-gradient(circle at 20% 72%, rgba(255, 255, 255, 0.2) 0 1px, transparent 2px);
+    background-size: 180px 180px, 230px 230px, 260px 260px, 140px 140px;
+    animation: lobbyDust 18s linear infinite;
+  }
+  .lobby::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.5)),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 50%, rgba(0, 0, 0, 0.58));
+  }
+  @keyframes lobbyDust {
+    to { transform: translate3d(45px, -32px, 0); }
+  }
+  .lobby.hide { display: none; }
+  .lobby-atmosphere {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .maze-plane {
+    position: absolute;
+    left: 50%;
+    bottom: -20%;
+    width: min(980px, 180vw);
+    height: 72%;
+    transform: translateX(-50%) perspective(540px) rotateX(58deg);
+    transform-origin: center bottom;
+    opacity: 0.42;
+    background-image:
+      linear-gradient(rgba(201, 160, 96, 0.2) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(201, 160, 96, 0.2) 2px, transparent 2px);
+    background-size: 54px 54px;
+    border: 2px solid rgba(201, 160, 96, 0.22);
+    -webkit-mask-image: linear-gradient(180deg, transparent 2%, #000 40%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 2%, #000 40%, #000 100%);
+  }
+  .fog-bank {
+    position: absolute;
+    width: 64vw;
+    height: 34vw;
+    max-width: 540px;
+    max-height: 280px;
+    border-radius: 50%;
+    filter: blur(42px);
+    opacity: 0.22;
+  }
+  .fog-bank.one { left: -20%; top: 24%; background: #90ba59; }
+  .fog-bank.two { right: -22%; top: 42%; background: #5a9adc; }
+  .lobby-shell {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 620px);
+    height: 100%;
+    margin: 0 auto;
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 18px)
+      clamp(18px, 5vw, 34px)
+      calc(env(safe-area-inset-bottom, 0px) + 18px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .lobby-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 54px;
+  }
+  .lobby-best {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 8px 15px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background: rgba(4, 10, 7, 0.5);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .lobby-best span {
+    color: rgba(237, 244, 223, 0.55);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+  }
+  .lobby-best b {
+    color: #ffe06a;
+    font-size: 16px;
+    line-height: 1.05;
+  }
+  .settings-btn {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    color: #f7f4df;
+    background: rgba(4, 10, 7, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 15px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .settings-btn svg { width: 22px; height: 22px; fill: currentColor; }
+  .settings-btn:active { transform: translateY(2px); }
+  .lobby-hero {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(5px, 1.2vh, 12px);
+    padding-top: 4px;
+  }
+  .title-lockup {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    text-align: center;
+  }
+  .title-kicker {
+    display: block;
+    margin-bottom: 2px;
+    color: #b8d986;
+    font-size: clamp(9px, 2.4vw, 12px);
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+  }
+  .logo-emblem {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .lobby-arena {
+    position: relative;
+    width: min(100%, 500px);
+    height: clamp(225px, 36vh, 330px);
+    flex: 0 1 auto;
+  }
+  .lobby-arena::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 4%;
+    width: 88%;
+    height: 64%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(114, 167, 61, 0.22), transparent 68%);
+    filter: blur(10px);
+  }
+  .arena-path {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    bottom: 3%;
+    width: 82%;
+    height: 37%;
+    transform: translateX(-50%) perspective(320px) rotateX(58deg);
+    transform-origin: center bottom;
+    clip-path: polygon(26% 0, 74% 0, 100% 100%, 0 100%);
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.06) 2px, transparent 2px),
+      linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+      linear-gradient(180deg, #596a42, #35452b);
+    background-size: 25% 100%, 100% 42%, 100% 100%;
+    border: 2px solid rgba(201, 160, 96, 0.34);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.45);
+  }
+  .chase-callout {
+    position: absolute;
+    z-index: 4;
+    right: 5%;
+    top: 16%;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border: 1px solid rgba(118, 189, 235, 0.28);
+    border-radius: 999px;
+    color: #d9efff;
+    background: rgba(5, 19, 29, 0.64);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .chase-callout i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #70bced;
+    box-shadow: 0 0 0 4px rgba(112, 188, 237, 0.14), 0 0 14px #70bced;
+    animation: slimeSignal 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes slimeSignal {
+    to { transform: scale(1.25); opacity: 0.7; }
+  }
+  .logo-poster,
+  #logoGoblin3D {
+    position: absolute;
+    display: block;
+  }
+  #logoGoblin3D {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .logo-poster {
+    left: 14%;
+    bottom: 11%;
+    width: 48%;
+    height: 63%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 18px 16px rgba(0, 0, 0, 0.42));
+  }
+  .logo-emblem.mascot-ready .logo-poster {
+    display: none;
+  }
+  .lobby h1 {
+    position: relative;
+    z-index: 3;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+    font-size: clamp(54px, 14vw, 88px);
+    letter-spacing: -0.055em;
+    line-height: 0.92;
+    color: #f7f3d6;
+    text-shadow:
+      0 3px 0 #344325,
+      0 7px 0 #172116,
+      0 13px 30px rgba(0, 0, 0, 0.55);
+    font-weight: 700;
+    font-family: "Fredoka", sans-serif;
+    white-space: nowrap;
+  }
+  .lobby h1 .run {
+    display: inline-block;
+    margin-left: 0.12em;
+    color: #ffd44f;
+    text-shadow:
+      0 3px 0 #9a6500,
+      0 7px 0 #593b00,
+      0 13px 28px rgba(0, 0, 0, 0.55);
+    transform: skewX(-7deg);
+  }
+  .lobby .tagline {
+    margin: 0;
+    max-width: 390px;
+    text-align: center;
+    color: rgba(239, 244, 225, 0.78);
+    font-size: clamp(13px, 3.4vw, 16px);
+    line-height: 1.28;
+    letter-spacing: 0.01em;
+  }
+  .lobby-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-top: 6px;
+  }
+  .lobby .play {
+    position: relative;
+    width: min(100%, 390px);
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    overflow: hidden;
+    color: #201500;
+    background: linear-gradient(180deg, #ffe169 0%, #ffc52e 58%, #e8a914 100%);
+    border: 2px solid #ffea92;
+    border-radius: 22px;
+    padding: 14px 28px 16px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    cursor: pointer;
+    box-shadow:
+      0 7px 0 #8c5d00,
+      0 17px 34px rgba(0, 0, 0, 0.42),
+      inset 0 1px rgba(255, 255, 255, 0.68);
+    text-shadow: 0 1px rgba(255, 255, 255, 0.48);
+    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, filter 0.1s;
+    animation: playPulse 1.15s ease-in-out infinite alternate;
+    font-family: "Fredoka", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .lobby .play::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -35%;
+    width: 26%;
+    height: 100%;
+    transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+    animation: playShine 2.8s ease-in-out infinite;
+  }
+  .play-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    padding-left: 3px;
+    color: #fff4b6;
+    background: #352300;
+    border-radius: 50%;
+    font-size: 15px;
+    box-shadow: inset 0 -2px rgba(0, 0, 0, 0.25);
+  }
+  @keyframes playPulse {
+    from { filter: saturate(1); }
+    to   { filter: saturate(1.08) brightness(1.04); }
+  }
+  @keyframes playShine {
+    0%, 55% { left: -35%; }
+    78%, 100% { left: 118%; }
+  }
+  .lobby .play:hover {
+    filter: brightness(1.06);
+  }
+  .lobby .play:active {
+    animation: none;
+    transform: translateY(5px) scale(0.985);
+    box-shadow: 0 2px 0 #8c5d00, 0 8px 18px rgba(0, 0, 0, 0.34);
+  }
+  .control-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: rgba(236, 243, 220, 0.54);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+  }
+  .gesture-mark {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    color: #b8d986;
+    background: rgba(0, 0, 0, 0.18);
+    font-size: 14px;
+  }
+  .options-panel {
+    position: absolute;
+    z-index: 5;
+    top: calc(env(safe-area-inset-top, 0px) + 78px);
+    right: max(18px, calc((100vw - 620px) / 2 + 34px));
+    width: min(260px, calc(100vw - 36px));
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    background: rgba(5, 12, 8, 0.9);
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.5), inset 0 1px rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    animation: fadeSlideIn 0.18s ease-out;
+  }
+  .options-panel.open { display: flex; }
+  .options-title {
+    color: rgba(239, 244, 225, 0.58);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .options-row {
+    display: flex;
+    gap: 8px;
+  }
+  /* Estadísticas en pantalla de derrota */
+  .result-stat {
+    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+    font-size: 12px; color: #b0b8c5;
+    padding: 4px 0;
+  }
+  .result-stat span b { color: #ffd24a; font-weight: 600; }
+  .lose-best-badge {
+    background: rgba(255, 210, 74, 0.15);
+    border: 1.5px solid rgba(255, 210, 74, 0.4);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffd24a;
+    text-shadow: 0 0 10px rgba(255, 210, 74, 0.3);
+    margin: 2px 0 4px;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .lose-best-badge.new-record {
+    background: linear-gradient(135deg, rgba(255, 210, 74, 0.35) 0%, rgba(232, 177, 36, 0.35) 100%);
+    border: 2px solid #ffd24a;
+    box-shadow: 0 0 18px rgba(255, 210, 74, 0.55);
+    animation: bestBump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  /* Botón compartir */
+  .share-btn {
+    min-width: 42px; padding: 8px 10px;
+    font-size: 16px;
+  }
+  .share-btn.copied { background: #2d7a3a !important; }
+  .audio-btn {
+    flex: 1;
+    background: rgba(83, 119, 52, 0.42);
+    border: 1px solid rgba(184, 217, 134, 0.24);
+    border-radius: 11px;
+    color: #f0f7e6;
+    padding: 10px 9px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: "Fredoka", sans-serif;
+  }
+  .audio-btn:hover { background: rgba(91, 136, 55, 0.58); }
+  .audio-btn.muted { color: #b8c4ab; }
+
+  /* JUICY: accessibilidad — modo "menos efectos" desactiva shake CSS y baja trauma */
+  body.reduced-effects canvas#game.shake { animation: none !important; }
+  body.reduced-effects .lobby::before,
+  body.reduced-effects .lobby .play::before,
+  body.reduced-effects .chase-callout i {
+    animation: none !important;
+  }
+  .version {
+    position: absolute;
+    z-index: 4;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    left: 12px;
+    font-size: 9px;
+    color: rgba(217, 230, 204, 0.24);
+  }
+
+  /* === JOYSTICK TÁCTIL === */
+  #joy-base {
+    position: absolute;
+    display: none;
+    width: 112px; height: 112px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+    z-index: 5;
+    touch-action: none;
+  }
+  #joy-knob {
+    position: absolute;
+    top: 30px; left: 30px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(111, 168, 58, 0.35);
+    border: 2px solid rgba(111, 168, 58, 0.7);
+    pointer-events: none;
+    transition: transform 0.04s ease-out;
+  }
+
+  /* === JUICY: screen flash overlay === */
+  #flash {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 6;
+    background: transparent;
+    opacity: 0;
+    mix-blend-mode: screen;
+  }
+  #flash.fire { animation: flash 0.18s ease-out forwards; }
+  @keyframes flash {
+    0%   { opacity: 0.9; }
+    100% { opacity: 0; }
+  }
+
+  /* === HUD móvil: chips compactos, timer un poco más pequeño === */
+  @media (max-width: 700px), (pointer: coarse) {
+    .hud-timer  { width: 96px;  height: 96px;  top: calc(env(safe-area-inset-top, 0px) + 4px); }
+    .timer-time { font-size: 26px; }
+    .timer-label{ font-size: 7px;  letter-spacing: 0.2em; }
+    .hud-cluster{ top: calc(env(safe-area-inset-top, 0px) + 12px); left: calc(env(safe-area-inset-left, 0px) + 10px); gap: 6px; }
+    .chip       { padding: 5px 11px 6px; min-height: 26px; }
+    .chip-num   { font-size: 16px; }
+    .chip-tag   { font-size: 8px;  letter-spacing: 0.18em; }
+    .hud-iconbtn{ top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 12px); width: 40px; height: 40px; }
+    .hud-iconbtn svg { width: 20px; height: 20px; }
+    .hud-bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); gap: 8px; }
+    .slime-badge{ padding: 5px 10px; font-size: 13px; min-width: 50px; }
+    .exit-tag   { font-size: 8px; letter-spacing: 0.16em; }
+    .lobby-shell {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+    .lobby-arena { height: clamp(220px, 35vh, 285px); }
+    .lobby .play {
+      width: 100%;
+      max-width: 370px;
+    }
+    .options-panel {
+      right: 18px;
+    }
+  }
+  @media (max-height: 700px) {
+    .lobby-shell {
+      padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    }
+    .lobby-topbar { min-height: 46px; }
+    .lobby-best { padding: 6px 12px 7px; }
+    .settings-btn { width: 42px; height: 42px; border-radius: 13px; }
+    .title-kicker { margin-bottom: 0; }
+    .lobby h1 { font-size: clamp(48px, 13vw, 66px); }
+    .lobby-arena { height: clamp(190px, 32vh, 235px); }
+    .lobby .tagline { font-size: 13px; }
+    .lobby .play { min-height: 60px; font-size: 23px; }
+    .lobby-actions { gap: 9px; padding-top: 2px; }
+  }
+  @media (max-height: 560px) {
+    .title-kicker,
+    .chase-callout,
+    .lobby .tagline {
+      display: none;
+    }
+    .lobby-arena { height: 180px; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" style="width:100%;height:100%;display:block"></canvas>
+  <div id="flash"></div>
+
+  <!-- HUD rediseñado: timer circular central + chips izquierda + botón circular derecha + barra salida abajo -->
+  <div class="hud" id="hud">
+    <div class="hud-cluster">
+      <div class="chip chip-level" id="levelBadge">
+        <span class="chip-num" id="level">1</span>
+        <span class="chip-tag">NIVEL</span>
+      </div>
+      <div class="chip chip-best" id="bestBadge">
+        <span class="chip-num" id="bestTime">—</span>
+        <span class="chip-tag">MEJOR</span>
+      </div>
+    </div>
+
+    <div class="hud-timer" id="hudTimer">
+      <svg class="timer-ring" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"  stop-color="#ffd24a"/>
+            <stop offset="100%" stop-color="#ff8a3a"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track"    cx="50" cy="50" r="46"/>
+        <circle class="ring-progress" id="ringProgress" cx="50" cy="50" r="46"/>
+      </svg>
+      <div class="timer-content">
+        <span class="timer-time" id="runTime">0:00</span>
+        <span class="timer-label">TIEMPO</span>
+      </div>
+    </div>
+
+    <button class="hud-iconbtn" id="regen" aria-label="Nueva mazmorra">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.39 11h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+      </svg>
+    </button>
+
+    <div class="hud-bottom">
+      <div class="slime-badge" id="distBadge">
+        <span class="slime-dot"></span>
+        <span class="slime-text" id="slimeDist">—</span>
+      </div>
+      <div class="exit-track">
+        <div class="exit-fill" id="exitFill"></div>
+      </div>
+      <div class="exit-tag">SALIDA</div>
+    </div>
+  </div>
+
+  <!-- LOBBY — portada de juego, un toque para empezar -->
+  <div class="lobby" id="lobby">
+    <div class="lobby-atmosphere" aria-hidden="true">
+      <div class="maze-plane"></div>
+      <div class="fog-bank one"></div>
+      <div class="fog-bank two"></div>
+    </div>
+    <div class="lobby-shell">
+      <header class="lobby-topbar">
+        <div class="lobby-best">
+          <span>RÉCORD</span>
+          <b id="lobbyBest">Nivel 1</b>
+        </div>
+        <button class="settings-btn" id="optionsToggle" aria-label="Abrir opciones" aria-controls="optionsPanel" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.03-.66-.08-.98l2.11-1.65-2-3.46-2.49 1a7.4 7.4 0 0 0-1.69-.98L15 3.27h-4l-.35 2.66c-.61.25-1.17.58-1.69.98l-2.49-1-2 3.46 2.11 1.65c-.05.32-.08.66-.08.98s.03.66.08.98l-2.11 1.65 2 3.46 2.49-1c.52.4 1.08.73 1.69.98l.35 2.66h4l.35-2.66c.61-.25 1.17-.58 1.69-.98l2.49 1 2-3.46-2.1-1.65ZM13 15.5A3.5 3.5 0 1 1 13 8a3.5 3.5 0 0 1 0 7.5Z"/>
+          </svg>
+        </button>
+      </header>
+      <main class="lobby-hero">
+        <div class="title-lockup">
+          <span class="title-kicker">ESCAPA · SOBREVIVE · REPITE</span>
+          <h1 aria-label="Cubex Run">CUBEX <span class="run">RUN</span></h1>
+        </div>
+        <div class="lobby-arena" aria-hidden="true">
+          <div class="arena-path"></div>
+          <div class="chase-callout"><i></i> EL SLIME TE SIGUE</div>
+          <div class="logo-emblem">
+            <img class="logo-poster" alt="" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAADcElEQVR4AeyaMWsUQRiG57bQRoiKoImFGgWJjeIvSGPlYQotBLExf0AtrESiYGMh/hZJnxNbjY0oghhQPBshilUE77yB7GYyuTA7++03797eK3zsrDvzvbPPcxNIuMzwH5QABUDxG0MBFAAmAI7nCaAAMAFwPE8ABYAJgON5AigATAAcP50nAAzdjacAlwZgTAEA6G4kBbg0AGMKAEB3IynApQEYUwAAuhtJAS4NwJgCANDdSApwaQDGFACA7kYmFODGcpwToICcBOhKASDweSwF5CRAVwoAgc9jKSAnAbpSAAh8HksBOQnQVUVA9+65xav3zq61qbr351c0HKkIMNlg0Zhhy0oDv+GXc3Ww7nQNjXROQCiVzwsCFFCgwAwoAMO9SKWAAgVmQAEY7kUqBRQoMAMKKMt9kPXKTo2Zl8VMLj23xGZnZ86Ya5eWo6p78U5wC1cWbkf1tHs4eXQ+2Fdrgo6Akrs9fuiUiakTo/mh1rMzp6N62vzBv2GordpzqAC1t5qgxu0UQAHxBJ48fWZu3lreUx8+fopvtr3Crh3X02ZtT4FfmnMCUv4YTpkVUNwcAYGNtvUxBYDNUgAFgAmA4xtzAm5cXzKPHj7YUxcWzldGZNeO62mzKjeteaGKgNUXn4N/N/nxe2PXq1hY42rXpAo343ra/4ttVeadYnva+SoCbONJKv/DkHLvUAHrX9dMTL37FjxYo369UcX1TQncz6pRgN86fP92JCC2Ql3f91+bunuGMiXPoQIkG2/LWgoAm2ysgF/9LbP+8mcttfHmDxjz/vGNFbDZ/2s2v2/VUvu/Pv5JYwXg0aTZwVQIODx3IA3NCimNFWChHZk7aOqoClySLWmsAAv+8tIxU0fZXsmIRgYpCuiEf22N3Cxuut67KArA4UqZLM2iAClB4XoKEAKULqcAKUHhegoQApQupwApQeF6ChAClC6nAClB4XoKEAKULqcAKUHhejUBnc7wlXBvU7FcTYAqvcTNNT9MFJBYph9HAT6RxPcUkBi4H0cBPpHE9xSQGLgfpydgkPU6HfO4DWVG7+KDq+s+q6uR38d+nXv1+ZeVVlSJr9v771/2Xk1A2Q1M+zwKAH8CKGByBIB32tJ4ngCwWAqgADABcDxPAAWACYDjeQIoAEwAHM8TQAFgAuB4noCAAO3H/wEAAP//eAGRgwAAAAZJREFUAwAK7ZPfNOXeZQAAAABJRU5ErkJggg==">
+            <canvas id="logoGoblin3D"></canvas>
+          </div>
+        </div>
+        <p class="tagline">Encuentra la salida antes de que el slime te alcance.</p>
+      </main>
+      <footer class="lobby-actions">
+        <button class="play" id="playBtn"><span class="play-icon">▶</span><span>JUGAR</span></button>
+        <div class="control-hint"><span class="gesture-mark">↕</span> Arrastra para moverte</div>
+      </footer>
+    </div>
+    <div class="options-panel" id="optionsPanel">
+      <div class="options-title">Opciones de juego</div>
+      <div class="options-row">
+        <button class="audio-btn" id="audioToggle">🔊 Audio</button>
+        <button class="audio-btn" id="accessToggle" title="Reduce shake y flashing">♿ Efectos</button>
+      </div>
+    </div>
+    <div class="version">v0.4</div>
+  </div>
+
+  <div class="overlay lose" id="lose">
+    <h1>¡TE ATRAPÓ!</h1>
+    <p>El slime salió de la niebla.</p>
+    <div class="result-stat">
+      <span>Nivel <b id="loseLevel">—</b></span>
+      <span>Faltaban <b id="loseDistance">—</b> pasos</span>
+      <span>Tiempo <b id="loseElapsed">—</b></span>
+    </div>
+    <div class="lose-best-badge" id="loseBestBadge">
+      <span id="loseBestText">🏆 Récord personal: Nivel <b id="loseBestLevel">—</b></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="retryBtn">Reintentar</button>
+      <button class="btn secondary" id="loseBtn">Nueva</button>
+      <button class="btn secondary" id="loseLobbyBtn">Lobby</button>
+      <button class="btn secondary share-btn" id="shareLoseBtn">📋</button>
+    </div>
+  </div>
+  <div class="overlay win" id="win">
+    <h1>¡ESCAPASTE!</h1>
+    <p>Nivel <b id="winLevel">—</b> completado.</p>
+    <div class="stat">
+      <span>Tiempo: <b id="winTime">—</b></span>
+      <span>Mejor: <b id="winBest">—</b></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="winBtn">Siguiente nivel</button>
+      <button class="btn secondary" id="winLobbyBtn">Lobby</button>
+      <button class="btn secondary share-btn" id="shareWinBtn">📋</button>
+    </div>
+  </div>
+
+  <!-- PAUSA — se activa con Esc o P durante el juego -->
+  <div class="overlay paused" id="pause">
+    <h1>⏸ Pausa</h1>
+    <p>El slime sigue ahí. No te descuides.</p>
+    <div class="btn-row">
+      <button class="btn" id="resumeBtn">Continuar</button>
+      <button class="btn secondary" id="pauseLobbyBtn">Volver al lobby</button>
+    </div>
+    <p class="hint">Esc / P para reanudar</p>
+  </div>
+</div>
+
+<script type="module" src="js/main.js?v=21"></script>
+<script type="module" src="js/lobby-mascot.js?v=21"></script>
+</body>
+</html>

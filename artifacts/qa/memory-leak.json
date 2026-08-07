@@ -1,0 +1,244 @@
+{
+  "args": {
+    "rounds": 20,
+    "url": "http://127.0.0.1:8080/?debug=1&v=8",
+    "out": "artifacts/qa"
+  },
+  "samples": [
+    {
+      "round": 0,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2164,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 1,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2164,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 2,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 3,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 4,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2164,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 5,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 6,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 7,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 8,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 9,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 10,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2164,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 11,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 12,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 13,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 14,
+      "geometries": 15,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 15,
+      "geometries": 16,
+      "calls": 23,
+      "triangles": 2330,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 16,
+      "geometries": 16,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 17,
+      "geometries": 16,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 18,
+      "geometries": 16,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    },
+    {
+      "round": 19,
+      "geometries": 16,
+      "calls": 11,
+      "triangles": 2186,
+      "textures": 1,
+      "world": 8,
+      "phase": "playing",
+      "slimeAlive": true
+    }
+  ],
+  "stats": {
+    "geometries": {
+      "min": 15,
+      "max": 16,
+      "mean": 15.25
+    },
+    "calls": {
+      "min": 11,
+      "max": 23,
+      "mean": 11.6
+    },
+    "triangles": {
+      "min": 2164,
+      "max": 2330,
+      "mean": 2188.8
+    },
+    "textures": {
+      "min": 1,
+      "max": 1,
+      "mean": 1
+    },
+    "world": {
+      "min": 8,
+      "max": 8,
+      "mean": 8
+    }
+  },
+  "leakCheck": {
+    "firstHalfMaxGeometries": 15,
+    "secondHalfMaxGeometries": 16,
+    "drift": 1,
+    "driftPct": 6.7
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

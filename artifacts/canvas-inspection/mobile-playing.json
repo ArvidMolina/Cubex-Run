@@ -1,0 +1,97 @@
+{
+  "url": "http://127.0.0.1:8080/?debug=1&v=5",
+  "mode": "mobile",
+  "state": "playing",
+  "seed": null,
+  "screenshotPath": "artifacts\\canvas-inspection\\mobile-playing.png",
+  "gpu": {
+    "renderer": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (AMD)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 8.25,
+      "y": 0,
+      "width": 373.5,
+      "height": 664
+    },
+    "drawingBuffer": {
+      "width": 810,
+      "height": 1440
+    },
+    "alphaPixels": 4101,
+    "variance": 251,
+    "colorBuckets": 32,
+    "metrics": {
+      "colorBuckets": 52,
+      "colorEntropyBits": 1.8,
+      "edgeDensity": 0.086,
+      "luminance": {
+        "mean": 40,
+        "p5": 5.9,
+        "p95": 101,
+        "contrast": 95.1
+      },
+      "dominantColorShare": 0.545,
+      "nonBackgroundShare": 0.455
+    },
+    "renderBudget": {
+      "tier": "mobile",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 11,
+          "limit": 150,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 2164,
+          "limit": 300000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 12,
+          "limit": 200,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 0,
+          "limit": 40,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "renderer": {
+        "calls": 11,
+        "triangles": 2164,
+        "geometries": 12,
+        "textures": 0
+      },
+      "state": {
+        "phase": "playing",
+        "level": 1,
+        "slimeAlive": true,
+        "slimeDistToPlayer": 18
+      },
+      "world": {
+        "children": 8
+      },
+      "hooks": [
+        "__maze2",
+        "__THREE_GAME_TEST_HOOKS__",
+        "__THREE_GAME_DIAGNOSTICS__"
+      ]
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

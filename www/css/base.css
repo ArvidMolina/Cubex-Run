@@ -1,0 +1,49 @@
+/* ============================================================
+   BASE — reset, fuente, body, wrap, canvas
+   Cargado primero. Define el lienzo a pantalla completa.
+   ============================================================ */
+
+@font-face {
+  font-family: "Fredoka";
+  src: url("assets/fonts/fredoka-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(120% 120% at 50% 0%, #11161d 0%, #050608 55%, #020304 100%);
+  color: #e8eaed;
+  font-family: "Fredoka", "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* El #wrap llena toda la pantalla. El aspect ratio del juego se
+   ajusta dinámicamente al canvas via la cámara ortográfica (ver
+   js/renderer.js -> resize()). Sin barras negras, sin letterbox. */
+#wrap {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  overflow: hidden;
+}
+
+canvas#game {
+  background: #050608;
+  display: block;
+  width: 100%;
+  height: 100%;
+}

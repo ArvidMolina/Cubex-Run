@@ -1,0 +1,30 @@
+{
+  "name": "demo-maze-2",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Cubex Run — QA harness scaffold (cherry-picked from threejs-game-skills)",
+  "type": "module",
+  "scripts": {
+    "serve": "python -m http.server 8080",
+    "inspect:canvas": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080 --out artifacts/canvas-inspection",
+    "qa:desktop": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection",
+    "qa:mobile": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection --mobile",
+    "qa:state-lobby": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection --state lobby",
+    "qa:state-playing": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection --state playing",
+    "qa:state-lose": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection --state lose",
+    "qa:state-paused": "node scripts/inspect-threejs-canvas.mjs --url 'http://127.0.0.1:8080/?debug=1&v=7' --out artifacts/canvas-inspection --state paused",
+    "qa:state-win": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection --state win",
+    "qa:bfs-distribution": "node scripts/bfs-distribution.mjs --seeds 30 --out artifacts/qa",
+    "qa:memory-leak": "node scripts/memory-leak.mjs --rounds 20 --out artifacts/qa",
+    "qa:bot-playtest": "node scripts/bot-playtest.mjs --games 10 --out artifacts/qa"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "pngjs": "^7.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}

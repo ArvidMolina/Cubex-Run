@@ -1,0 +1,37 @@
+﻿{
+  "name": "npm",
+  "dependencies": {
+    "@bubblewrap/cli": {
+      "version": "1.24.1",
+      "overridden": false
+    },
+    "@cline/cli": {
+      "version": "0.0.13",
+      "overridden": false
+    },
+    "@kilocode/cli": {
+      "version": "7.4.16",
+      "overridden": false
+    },
+    "@lydell/node-pty": {
+      "version": "1.2.0-beta.14",
+      "overridden": false
+    },
+    "@phaserjs/game-agent": {
+      "version": "1.0.0",
+      "overridden": false
+    },
+    "freebuff": {
+      "version": "0.0.138",
+      "overridden": false
+    },
+    "localtunnel": {
+      "version": "2.0.2",
+      "overridden": false
+    },
+    "opencode-ai": {
+      "version": "1.18.11",
+      "overridden": false
+    }
+  }
+}

@@ -1,0 +1,59 @@
+/* ============================================================
+   MOBILE — media queries para pantallas pequeñas / táctiles
+   Override de los archivos base/hud/lobby/overlays en móvil.
+   ============================================================ */
+
+@media (max-width: 700px), (pointer: coarse) {
+  /* HUD más compacto en móvil */
+  .hud-timer  { width: 96px;  height: 96px;  top: calc(env(safe-area-inset-top, 0px) + 4px); }
+  .timer-time { font-size: 26px; }
+  .timer-label{ font-size: 7px;  letter-spacing: 0.2em; }
+  .hud-cluster{ top: calc(env(safe-area-inset-top, 0px) + 12px); left: calc(env(safe-area-inset-left, 0px) + 10px); gap: 6px; }
+  .chip       { padding: 5px 11px 6px; min-height: 26px; }
+  .chip-num   { font-size: 16px; }
+  .chip-tag   { font-size: 8px;  letter-spacing: 0.18em; }
+  .hud-iconbtn{ top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 12px); width: 40px; height: 40px; }
+  .hud-iconbtn svg { width: 20px; height: 20px; }
+  .hud-bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); gap: 8px; }
+  .slime-badge{ padding: 5px 10px; font-size: 13px; min-width: 50px; }
+  .exit-tag   { font-size: 8px; letter-spacing: 0.16em; }
+
+  /* Lobby en móvil: paddings más estrechos, arena más pequeña */
+  .lobby-shell {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .lobby-arena { height: clamp(220px, 35vh, 285px); }
+  .lobby .play {
+    width: 100%;
+    max-width: 370px;
+  }
+  .options-panel {
+    right: 18px;
+  }
+}
+
+@media (max-height: 700px) {
+  .lobby-shell {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+  .lobby-topbar { min-height: 46px; }
+  .lobby-best { padding: 6px 12px 7px; }
+  .settings-btn { width: 42px; height: 42px; border-radius: 13px; }
+  .title-kicker { margin-bottom: 0; }
+  .lobby h1 { font-size: clamp(48px, 13vw, 66px); }
+  .lobby-arena { height: clamp(190px, 32vh, 235px); }
+  .lobby .tagline { font-size: 13px; }
+  .lobby .play { min-height: 60px; font-size: 23px; }
+  .lobby-actions { gap: 9px; padding-top: 2px; }
+}
+
+@media (max-height: 560px) {
+  .title-kicker,
+  .chase-callout,
+  .lobby .tagline {
+    display: none;
+  }
+  .lobby-arena { height: 180px; }
+}

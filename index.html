@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>Cubex Run</title>
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%236fa83a'/><rect x='3' y='5' width='2' height='2' fill='%23fff'/><rect x='11' y='5' width='2' height='2' fill='%23fff'/><rect x='3' y='5' width='1' height='1' fill='%23000'/><rect x='11' y='5' width='1' height='1' fill='%23000'/></svg>" />
+<script type="importmap">
+{ "imports": { "three": "./assets/vendor/three.module.min.js" } }
+</script>
+<link rel="modulepreload" href="assets/vendor/three.module.min.js?v=21">
+<link rel="modulepreload" href="js/main.js?v=21">
+<link rel="modulepreload" href="js/lobby-mascot.js?v=21">
+<link rel="modulepreload" href="js/game.js?v=21">
+<link rel="stylesheet" href="css/base.css?v=21">
+<link rel="stylesheet" href="css/hud.css?v=21">
+<link rel="stylesheet" href="css/lobby.css?v=21">
+<link rel="stylesheet" href="css/overlays.css?v=21">
+<link rel="stylesheet" href="css/effects.css?v=21">
+<link rel="stylesheet" href="css/mobile.css?v=21">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" style="width:100%;height:100%;display:block"></canvas>
+  <div id="flash"></div>
+
+  <!-- HUD rediseñado: timer circular central + chips izquierda + botón circular derecha + barra salida abajo -->
+  <div class="hud" id="hud">
+    <div class="hud-cluster">
+      <div class="chip chip-level" id="levelBadge">
+        <span class="chip-num" id="level">1</span>
+        <span class="chip-tag">NIVEL</span>
+      </div>
+      <div class="chip chip-best" id="bestBadge">
+        <span class="chip-num" id="bestTime">—</span>
+        <span class="chip-tag">MEJOR</span>
+      </div>
+    </div>
+
+    <div class="hud-timer" id="hudTimer">
+      <svg class="timer-ring" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"  stop-color="#ffd24a"/>
+            <stop offset="100%" stop-color="#ff8a3a"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track"    cx="50" cy="50" r="46"/>
+        <circle class="ring-progress" id="ringProgress" cx="50" cy="50" r="46"/>
+      </svg>
+      <div class="timer-content">
+        <span class="timer-time" id="runTime">0:00</span>
+        <span class="timer-label">TIEMPO</span>
+      </div>
+    </div>
+
+    <button class="hud-iconbtn" id="regen" aria-label="Nueva mazmorra">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.39 11h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+      </svg>
+    </button>
+
+    <div class="hud-bottom">
+      <div class="slime-badge" id="distBadge">
+        <span class="slime-dot"></span>
+        <span class="slime-text" id="slimeDist">—</span>
+      </div>
+      <div class="exit-track">
+        <div class="exit-fill" id="exitFill"></div>
+      </div>
+      <div class="exit-tag">SALIDA</div>
+    </div>
+  </div>
+
+  <!-- LOBBY — portada de juego, un toque para empezar -->
+  <div class="lobby" id="lobby">
+    <div class="lobby-atmosphere" aria-hidden="true">
+      <div class="maze-plane"></div>
+      <div class="fog-bank one"></div>
+      <div class="fog-bank two"></div>
+    </div>
+    <div class="lobby-shell">
+      <header class="lobby-topbar">
+        <div class="lobby-best">
+          <span>RÉCORD</span>
+          <b id="lobbyBest">Nivel 1</b>
+        </div>
+        <button class="settings-btn" id="optionsToggle" aria-label="Abrir opciones" aria-controls="optionsPanel" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.03-.66-.08-.98l2.11-1.65-2-3.46-2.49 1a7.4 7.4 0 0 0-1.69-.98L15 3.27h-4l-.35 2.66c-.61.25-1.17.58-1.69.98l-2.49-1-2 3.46 2.11 1.65c-.05.32-.08.66-.08.98s.03.66.08.98l-2.11 1.65 2 3.46 2.49-1c.52.4 1.08.73 1.69.98l.35 2.66h4l.35-2.66c.61-.25 1.17-.58 1.69-.98l2.49 1 2-3.46-2.1-1.65ZM13 15.5A3.5 3.5 0 1 1 13 8a3.5 3.5 0 0 1 0 7.5Z"/>
+          </svg>
+        </button>
+      </header>
+      <main class="lobby-hero">
+        <div class="title-lockup">
+          <span class="title-kicker">ESCAPA · SOBREVIVE · REPITE</span>
+          <h1 aria-label="Cubex Run">CUBEX <span class="run">RUN</span></h1>
+        </div>
+        <div class="lobby-arena" aria-hidden="true">
+          <div class="arena-path"></div>
+          <div class="chase-callout"><i></i> EL SLIME TE SIGUE</div>
+          <div class="logo-emblem">
+            <img class="logo-poster" alt="" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAADcElEQVR4AeyaMWsUQRiG57bQRoiKoImFGgWJjeIvSGPlYQotBLExf0AtrESiYGMh/hZJnxNbjY0oghhQPBshilUE77yB7GYyuTA7++03797eK3zsrDvzvbPPcxNIuMzwH5QABUDxG0MBFAAmAI7nCaAAMAFwPE8ABYAJgON5AigATAAcP50nAAzdjacAlwZgTAEA6G4kBbg0AGMKAEB3IynApQEYUwAAuhtJAS4NwJgCANDdSApwaQDGFACA7kYmFODGcpwToICcBOhKASDweSwF5CRAVwoAgc9jKSAnAbpSAAh8HksBOQnQVUVA9+65xav3zq61qbr351c0HKkIMNlg0Zhhy0oDv+GXc3Ww7nQNjXROQCiVzwsCFFCgwAwoAMO9SKWAAgVmQAEY7kUqBRQoMAMKKMt9kPXKTo2Zl8VMLj23xGZnZ86Ya5eWo6p78U5wC1cWbkf1tHs4eXQ+2Fdrgo6Akrs9fuiUiakTo/mh1rMzp6N62vzBv2GordpzqAC1t5qgxu0UQAHxBJ48fWZu3lreUx8+fopvtr3Crh3X02ZtT4FfmnMCUv4YTpkVUNwcAYGNtvUxBYDNUgAFgAmA4xtzAm5cXzKPHj7YUxcWzldGZNeO62mzKjeteaGKgNUXn4N/N/nxe2PXq1hY42rXpAo343ra/4ttVeadYnva+SoCbONJKv/DkHLvUAHrX9dMTL37FjxYo369UcX1TQncz6pRgN86fP92JCC2Ql3f91+bunuGMiXPoQIkG2/LWgoAm2ysgF/9LbP+8mcttfHmDxjz/vGNFbDZ/2s2v2/VUvu/Pv5JYwXg0aTZwVQIODx3IA3NCimNFWChHZk7aOqoClySLWmsAAv+8tIxU0fZXsmIRgYpCuiEf22N3Cxuut67KArA4UqZLM2iAClB4XoKEAKULqcAKUHhegoQApQupwApQeF6ChAClC6nAClB4XoKEAKULqcAKUHhejUBnc7wlXBvU7FcTYAqvcTNNT9MFJBYph9HAT6RxPcUkBi4H0cBPpHE9xSQGLgfpydgkPU6HfO4DWVG7+KDq+s+q6uR38d+nXv1+ZeVVlSJr9v771/2Xk1A2Q1M+zwKAH8CKGByBIB32tJ4ngCwWAqgADABcDxPAAWACYDjeQIoAEwAHM8TQAFgAuB4noCAAO3H/wEAAP//eAGRgwAAAAZJREFUAwAK7ZPfNOXeZQAAAABJRU5ErkJggg==">
+            <canvas id="logoGoblin3D"></canvas>
+          </div>
+        </div>
+        <p class="tagline">Encuentra la salida antes de que el slime te alcance.</p>
+      </main>
+      <footer class="lobby-actions">
+        <button class="play" id="playBtn"><span class="play-icon">▶</span><span>JUGAR</span></button>
+        <div class="control-hint"><span class="gesture-mark">↕</span> Arrastra para moverte</div>
+      </footer>
+    </div>
+    <div class="options-panel" id="optionsPanel">
+      <div class="options-title">Opciones de juego</div>
+      <div class="options-row">
+        <button class="audio-btn" id="audioToggle">🔊 Audio</button>
+        <button class="audio-btn" id="accessToggle" title="Reduce shake y flashing">♿ Efectos</button>
+      </div>
+    </div>
+    <div class="version">v0.4</div>
+  </div>
+
+  <div class="overlay lose" id="lose">
+    <h1>¡TE ATRAPÓ!</h1>
+    <p>El slime salió de la niebla.</p>
+    <div class="result-stat">
+      <span>Nivel <b id="loseLevel">—</b></span>
+      <span>Faltaban <b id="loseDistance">—</b> pasos</span>
+      <span>Tiempo <b id="loseElapsed">—</b></span>
+    </div>
+    <div class="lose-best-badge" id="loseBestBadge">
+      <span id="loseBestText">🏆 Récord personal: Nivel <b id="loseBestLevel">—</b></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="retryBtn">Reintentar</button>
+      <button class="btn secondary" id="loseBtn">Nueva</button>
+      <button class="btn secondary" id="loseLobbyBtn">Lobby</button>
+      <button class="btn secondary share-btn" id="shareLoseBtn">📋</button>
+    </div>
+  </div>
+  <div class="overlay win" id="win">
+    <h1>¡ESCAPASTE!</h1>
+    <p>Nivel <b id="winLevel">—</b> completado.</p>
+    <div class="stat">
+      <span>Tiempo: <b id="winTime">—</b></span>
+      <span>Mejor: <b id="winBest">—</b></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="winBtn">Siguiente nivel</button>
+      <button class="btn secondary" id="winLobbyBtn">Lobby</button>
+      <button class="btn secondary share-btn" id="shareWinBtn">📋</button>
+    </div>
+  </div>
+
+  <!-- PAUSA — se activa con Esc o P durante el juego -->
+  <div class="overlay paused" id="pause">
+    <h1>⏸ Pausa</h1>
+    <p>El slime sigue ahí. No te descuides.</p>
+    <div class="btn-row">
+      <button class="btn" id="resumeBtn">Continuar</button>
+      <button class="btn secondary" id="pauseLobbyBtn">Volver al lobby</button>
+    </div>
+    <p class="hint">Esc / P para reanudar</p>
+  </div>
+</div>
+
+<script type="module" src="js/main.js?v=21"></script>
+<script type="module" src="js/lobby-mascot.js?v=21"></script>
+</body>
+</html>

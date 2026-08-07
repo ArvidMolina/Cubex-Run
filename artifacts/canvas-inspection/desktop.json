@@ -1,0 +1,99 @@
+{
+  "url": "http://127.0.0.1:8080/?debug=1",
+  "mode": "desktop",
+  "state": null,
+  "seed": null,
+  "screenshotPath": "artifacts\\canvas-inspection\\desktop.png",
+  "gpu": {
+    "renderer": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (AMD)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 437.5,
+      "y": 0,
+      "width": 405,
+      "height": 720
+    },
+    "drawingBuffer": {
+      "width": 540,
+      "height": 960
+    },
+    "alphaPixels": 4118,
+    "variance": 255,
+    "colorBuckets": 146,
+    "metrics": {
+      "colorBuckets": 264,
+      "colorEntropyBits": 4.98,
+      "edgeDensity": 0.22,
+      "luminance": {
+        "mean": 76.7,
+        "p5": 15.5,
+        "p95": 188.6,
+        "contrast": 173.1
+      },
+      "dominantColorShare": 0.157,
+      "nonBackgroundShare": 0.843
+    },
+    "renderBudget": {
+      "tier": "desktop",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 0,
+          "limit": 300,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 0,
+          "limit": 750000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 0,
+          "limit": 300,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 0,
+          "limit": 60,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "renderer": {
+        "calls": 0,
+        "triangles": 0,
+        "geometries": 0,
+        "textures": 0
+      },
+      "state": {
+        "phase": "lobby",
+        "level": 1,
+        "slimeAlive": false,
+        "slimeDistToPlayer": null
+      },
+      "world": {
+        "children": 0
+      },
+      "hooks": [
+        "__maze2",
+        "__THREE_GAME_TEST_HOOKS__",
+        "__THREE_GAME_DIAGNOSTICS__"
+      ]
+    }
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (File not found)"
+  ],
+  "pageErrors": []
+}

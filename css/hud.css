@@ -1,0 +1,262 @@
+/* ============================================================
+   HUD — central circular timer, glass chips, no chunky borders
+   Elementos durante la partida (timer, level/best, restart,
+   slime distance, exit progress).
+   ============================================================ */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: "Fredoka", sans-serif;
+}
+
+/* top-left cluster: level + best stacked */
+.hud-cluster {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
+  left: calc(env(safe-area-inset-left, 0px) + 14px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.chip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 14px 7px;
+  background: rgba(8, 12, 18, 0.5);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-radius: 999px;
+  min-height: 30px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chip-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.chip-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+}
+
+.chip-level .chip-num { color: #ffd24a; text-shadow: 0 0 14px rgba(255, 210, 74, 0.45); }
+.chip-best  .chip-num { color: #ffe07a; }
+.chip.bump .chip-num { animation: bestBump 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@keyframes bestBump {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.5); color: #fff8aa; text-shadow: 0 0 14px #ffd24a; }
+  100% { transform: scale(1); }
+}
+
+/* top-center: HERO circular timer */
+.hud-timer {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 108px;
+  height: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.4));
+}
+
+.ring-track {
+  fill: rgba(8, 12, 18, 0.55);
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 1.5;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: url(#ringGrad);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 289.03;
+  stroke-dashoffset: 289.03;
+  transition: stroke-dashoffset 0.18s linear, stroke 0.25s;
+}
+
+.hud-timer.danger    .ring-progress { stroke: #ff7a3a; }
+
+.hud-timer.critical  .ring-progress {
+  stroke: #ff3a3a;
+  animation: ringPulse 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes ringPulse {
+  from { stroke-width: 4;  filter: drop-shadow(0 0 0  rgba(255, 58, 58, 0)); }
+  to   { stroke-width: 6;  filter: drop-shadow(0 0 14px rgba(255, 58, 58, 0.75)); }
+}
+
+.timer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.timer-time {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+  transition: color 0.2s;
+}
+
+.timer-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.hud-timer.danger   .timer-time { color: #ffb89a; }
+
+.hud-timer.critical .timer-time {
+  color: #fff;
+  animation: timePulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes timePulse {
+  from { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65); }
+  to   { transform: scale(1.06); text-shadow: 0 0 18px rgba(255, 80, 80, 0.8); }
+}
+
+/* top-right: single circular icon button (restart) */
+.hud-iconbtn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 18px);
+  right: calc(env(safe-area-inset-right, 0px) + 16px);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(8, 12, 18, 0.5);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  color: #ffd24a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.1s ease-out, background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hud-iconbtn svg { width: 22px; height: 22px; fill: currentColor; }
+.hud-iconbtn:active { transform: scale(0.9); background: rgba(28, 22, 8, 0.7); }
+
+/* bottom: progress + slime distance */
+.hud-bottom {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  left: calc(env(safe-area-inset-left, 0px) + 16px);
+  right: calc(env(safe-area-inset-right, 0px) + 16px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slime-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(8, 12, 18, 0.5);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #6fa83a;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  min-width: 56px;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.slime-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.slime-badge.warn     { color: #ffb84a; }
+.slime-badge.danger   { color: #ff8a3a; animation: slimePulse 0.6s ease-in-out infinite alternate; }
+.slime-badge.critical {
+  color: #ff3a3a;
+  background: rgba(70, 14, 14, 0.7);
+  animation: slimePulse 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes slimePulse {
+  from { transform: scale(1);    }
+  to   { transform: scale(1.1);  }
+}
+
+.exit-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(8, 12, 18, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.exit-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #6fa83a 0%, #b8e36a 60%, #ffd24a 100%);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(111, 168, 58, 0.65);
+  transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.exit-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+}
