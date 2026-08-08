@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "serve": "python -m http.server 8080",
+    "android:copy": "node scripts/cap-copy-safe.mjs",
+    "android:sync": "node scripts/cap-copy-safe.mjs && node scripts/check-www-depth.mjs",
+    "android:build": "node scripts/cap-copy-safe.mjs && node scripts/check-www-depth.mjs && cd android && gradlew.bat assembleDebug",
     "inspect:canvas": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080 --out artifacts/canvas-inspection",
     "qa:desktop": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection",
     "qa:mobile": "node scripts/inspect-threejs-canvas.mjs --url http://127.0.0.1:8080/?debug=1 --out artifacts/canvas-inspection --mobile",
